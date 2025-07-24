@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.14.36121.58
@@ -8,19 +8,22 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.gitignore = .gitignore
 		Directory.Build.props = Directory.Build.props
-		nuget.config = nuget.config
+		NuGet.config = NuGet.config
 		Common\PackageIcon.png = Common\PackageIcon.png
 		RepositoryInfo.xml = RepositoryInfo.xml
 		Common\SharedKey.snk = Common\SharedKey.snk
+		appveyor.yml = appveyor.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{484E57FF-04CA-282B-DF8A-95F0C8587F63}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CodeCakeBuilder", "CodeCakeBuilder/CodeCakeBuilder.csproj", "{484E57FF-04CA-282B-DF8A-95F0C8587F63}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E4409E8E-B9BE-4189-AEE1-FB93780577E8}"
+	ProjectSection(SolutionItems) = preProject
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.DB.User.NamedUser.Tests", "Tests\CK.DB.User.NamedUser.Tests\CK.DB.User.NamedUser.Tests.csproj", "{26FB3C8E-ED64-B8F5-319B-F3AD53F8B07A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.DB.User.NamedUser.Tests", "Tests/CK.DB.User.NamedUser.Tests/CK.DB.User.NamedUser.Tests.csproj", "{26FB3C8E-ED64-B8F5-319B-F3AD53F8B07A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.DB.User.NamedUser", "CK.DB.User.NamedUser\CK.DB.User.NamedUser.csproj", "{DA31C2CD-BCB6-6642-26CB-D5A6922B4746}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CK.DB.User.NamedUser", "CK.DB.User.NamedUser/CK.DB.User.NamedUser.csproj", "{DA31C2CD-BCB6-6642-26CB-D5A6922B4746}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
