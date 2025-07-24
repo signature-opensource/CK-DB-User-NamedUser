@@ -2,7 +2,7 @@
 --
 -- Updates a LastName or FirstName of a User.
 
-create procedure CK.sNamedUserSetNames
+create procedure CK.sNamedUserNamesSet
     @ActorId int, 
     @UserId int, 
     @FirstName nvarchar(255),

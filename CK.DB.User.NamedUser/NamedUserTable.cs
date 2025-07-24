@@ -20,7 +20,7 @@ public abstract class NamedUserTable : SqlTable
     /// <param name="lastName">The last name. Null to skip the update.</param>
     /// <param name="firstName">The first name. Null to skip the update.</param>
     /// <returns>The awaitable.</returns>
-    [SqlProcedure( "sNamedUserSetNames" )]
+    [SqlProcedure( "sNamedUserNamesSet" )]
     public abstract Task SetNamesAsync( ISqlCallContext context, int actorId, int userId, string? firstName, string? lastName );
 
     /// <summary>
