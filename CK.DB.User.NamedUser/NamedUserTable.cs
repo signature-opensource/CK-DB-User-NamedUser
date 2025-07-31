@@ -1,14 +1,18 @@
 using CK.Core;
 using CK.SqlServer;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace CK.DB.User.NamedUser;
 
 [SqlTable( "tUser", Package = typeof( Package ) )]
 [Versions( "1.0.0" )]
-[SqlObjectItem( "transform:vUser" )]
+[SqlObjectItem( "transform:vUser, transform:sUserUserProfileRead" )]
 public abstract class NamedUserTable : SqlTable
 {
+    [AllowNull]
+    UserProfile.Package _userProfilePackage;
+
     void StObjConstruct( Actor.UserTable userTable ) { }
 
     /// <summary>

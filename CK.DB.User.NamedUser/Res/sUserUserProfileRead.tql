@@ -1,0 +1,8 @@
+create transformer on CK.sUserUserProfileRead
+as
+begin
+	add parameter @FirstName nvarchar( 255 ) output;
+	add parameter @LastName nvarchar( 255 ) output;
+
+	replace single {@UserName = u.UserName} with "@UserName = u.UserName, @FirstName = u.FirstName, @LastName = u.LastName";
+end

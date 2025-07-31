@@ -4,8 +4,12 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="CK.DB.Actor" Version="25.0.1--0007-develop" />
+    <PackageReference Include="CK.DB.User.UserProfile" Version="0.0.0--05iqvun-develop" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="**\*.sql;**\*.tql;**\*.y4" Exclude="bin\**;obj\**;CodeCakeBuilder\**;packages\**;@(EmbeddedResource)" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CK.IO.User.NamedUser\CK.IO.User.NamedUser.csproj" />
   </ItemGroup>
 </Project>
