@@ -1,15 +1,14 @@
 using CK.Core;
 using CK.Cris;
-using CK.IO.User.UserProfile;
+using CK.DB.Actor;
+using CK.IO.Actor;
 using CK.SqlServer;
 using CK.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using Shouldly;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
-using static CK.Testing.MonitorTestHelper;
 
 namespace CK.DB.User.NamedUser.Tests;
 
@@ -17,42 +16,31 @@ namespace CK.DB.User.NamedUser.Tests;
 public class NamedUserCrisTests
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-    AutomaticServices _automaticServices;
     AsyncServiceScope _scope;
-    CrisBackgroundExecutor _backgroundExecutor;
+    CrisExecutionContext _executor;
     PocoDirectory _pocoDir;
-    Package _package;
+    UserTable _userTable;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
     [OneTimeSetUp]
-    public async Task OneTimeSetUpAsync()
+    public void OneTimeSetUp()
     {
-        var configuration = TestHelper.CreateDefaultEngineConfiguration();
-        configuration.FirstBinPath.Path = TestHelper.BinFolder;
-        configuration.FirstBinPath.Assemblies.Add( "CK.DB.User.NamedUser" );
-        configuration.FirstBinPath.Types.Add( typeof( CrisBackgroundExecutorService ),
-                                              typeof( CrisBackgroundExecutor ) );
-        configuration.EnsureSqlServerConfigurationAspect();
-
-        var r = await configuration.RunSuccessfullyAsync();
-        _automaticServices = r.CreateAutomaticServices();
-        _scope = _automaticServices.Services.CreateAsyncScope();
+        _scope = SharedEngine.AutomaticServices.CreateAsyncScope();
         var services = _scope.ServiceProvider;
 
         _pocoDir = services.GetRequiredService<PocoDirectory>();
-        _backgroundExecutor = services.GetRequiredService<CrisBackgroundExecutor>();
-        _package = services.GetRequiredService<CK.DB.User.NamedUser.Package>();
+        _executor = services.GetRequiredService<CrisExecutionContext>();
+        _userTable = services.GetRequiredService<UserTable>();
     }
 
     [OneTimeTearDown]
     public async Task OneTimeTearDownAsync()
     {
         await _scope.DisposeAsync();
-        await _automaticServices.DisposeAsync();
     }
 
     [Test]
-    public async Task can_get_userProfile_through_Cris_Async()
+    public async Task can_get_userProfile_Async()
     {
         var userId = 1;
         var cmd = _pocoDir.Create<IGetUserProfileQCommand>( cmd =>
@@ -60,10 +48,9 @@ public class NamedUserCrisTests
             cmd.ActorId = 1;
             cmd.UserId = userId;
         } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<IO.User.NamedUser.IUserProfile?>();
+        var executingCmd = await _executor.ExecuteRootCommandAsync( cmd );
 
-        var profile = await executingCmd.Result;
+        var profile = executingCmd.WithResult<IO.User.NamedUser.IUserProfile?>().Result;
         profile.ShouldNotBeNull();
         profile.UserId.ShouldBe( userId );
         profile.UserName.ShouldBe( "System" );
@@ -72,7 +59,7 @@ public class NamedUserCrisTests
     }
 
     [Test]
-    public async Task can_create_user_through_Cris_Async()
+    public async Task can_create_user_Async()
     {
         var userName = Guid.NewGuid().ToString();
         var fName = Guid.NewGuid().ToString();
@@ -84,92 +71,53 @@ public class NamedUserCrisTests
             c.FirstName = fName;
             c.LastName = lName;
         } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<ICreateUserCommandResult>();
-        var res = await executingCmd.Result;
-        res.CreatedUserId.ShouldBeGreaterThan( 1 );
-        res.UserMessages.ShouldNotBeNull();
+        var executingCmd = await _executor.ExecuteRootCommandAsync( (IAbstractCommand)cmd );
+        var res = executingCmd.WithResult<ICreateUserCommandResult>().Result;
+        res.UserIdResult.ShouldBeGreaterThan( 1 );
 
         var getcmd = _pocoDir.Create<IGetUserProfileQCommand>( cmd =>
         {
             cmd.ActorId = 1;
-            cmd.UserId = res.CreatedUserId;
+            cmd.UserId = res.UserIdResult;
         } );
 
-        var executingGetCmd = _backgroundExecutor.Submit( TestHelper.Monitor, getcmd, incomingValidationCheck: false )
-                                                 .WithResult<IO.User.NamedUser.IUserProfile?>();
+        var executingGetCmd = await _executor.ExecuteRootCommandAsync( getcmd );
 
-        var profile = await executingGetCmd.Result;
+        var profile = executingGetCmd.WithResult<IO.User.NamedUser.IUserProfile?>().Result;
         profile.ShouldNotBeNull();
         profile.FirstName.ShouldBe( fName );
         profile.LastName.ShouldBe( lName );
     }
 
     [Test]
-    public async Task can_update_user_through_Cris_Async()
+    public async Task can_set_user_names_Async()
     {
         var createCmd = _pocoDir.Create<IO.User.NamedUser.ICreateUserCommand>( c =>
         {
             c.ActorId = 1;
             c.UserName = Guid.NewGuid().ToString();
         } );
-        var executingCreateCmd = _backgroundExecutor.Submit( TestHelper.Monitor, createCmd, incomingValidationCheck: false )
-                                                    .WithResult<ICreateUserCommandResult>();
-        var createRes = await executingCreateCmd.Result;
+        var executingCreateCmd = await _executor.ExecuteRootCommandAsync( (IAbstractCommand)createCmd ); 
+        var createRes = executingCreateCmd.WithResult<ICreateUserCommandResult>().Result;
 
-        var newName = Guid.NewGuid().ToString();
         var fName = Guid.NewGuid().ToString();
         var lName = Guid.NewGuid().ToString();
-        var cmd = _pocoDir.Create<IO.User.NamedUser.IUpdateUserCommand>( c =>
+        var cmd = _pocoDir.Create<IO.User.NamedUser.ISetUserNamesCommand>( c =>
         {
             c.ActorId = 1;
-            c.UserId = createRes.CreatedUserId;
-            c.UserName = newName;
+            c.UserId = createRes.UserIdResult;
             c.FirstName = fName;
             c.LastName = lName;
         } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<ICrisBasicCommandResult>();
-        var res = await executingCmd.Result;
+        var executingCmd = await _executor.ExecuteRootCommandAsync( cmd );
+
+        var res = executingCmd.WithResult<ICrisBasicCommandResult>().Result;
         res.UserMessages.ShouldNotBeNull();
 
-        var profile = await _package.GetUserProfileAsync( new SqlStandardCallContext(), 1, createRes.CreatedUserId );
+        using var ctx = new SqlStandardCallContext();
+        var profile = await _userTable.GetUserProfileAsync<IO.User.NamedUser.IUserProfile>( ctx, 1, createRes.UserIdResult );
         profile.ShouldNotBeNull();
-        profile.UserName.ShouldBe( newName );
         profile.FirstName.ShouldBe( fName );
         profile.LastName.ShouldBe( lName );
-    }
-
-    [Test]
-    public async Task can_destroy_user_through_Cris_Async()
-    {
-        var createCmd = _pocoDir.Create<IO.User.NamedUser.ICreateUserCommand>( c =>
-        {
-            c.ActorId = 1;
-            c.UserName = Guid.NewGuid().ToString();
-        } );
-        var executingCreateCmd = _backgroundExecutor.Submit( TestHelper.Monitor, createCmd, incomingValidationCheck: false )
-                                                    .WithResult<ICreateUserCommandResult>();
-        var createRes = await executingCreateCmd.Result;
-        var cmd = _pocoDir.Create<IDestroyUserCommand>( c =>
-        {
-            c.ActorId = 1;
-            c.UserId = createRes.CreatedUserId;
-        } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<ICrisBasicCommandResult>();
-        var res = await executingCmd.Result;
-        res.UserMessages.Where( um => um.Level == UserMessageLevel.Error ).ShouldBeEmpty();
-
-        var getcmd = _pocoDir.Create<IGetUserProfileQCommand>( cmd =>
-        {
-            cmd.ActorId = 1;
-            cmd.UserId = createRes.CreatedUserId;
-        } );
-        var executingGetCmd = _backgroundExecutor.Submit( TestHelper.Monitor, getcmd, incomingValidationCheck: false )
-                                                 .WithResult<IO.User.NamedUser.IUserProfile?>();
-
-        var profile = await executingGetCmd.Result;
-        profile.ShouldBeNull();
     }
 }
