@@ -5,14 +5,11 @@
     <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="CK.DB.Tests.NUnit" Version="30.0.1--0009-develop" />
+      <PackageReference Include="CK.DB.Tests.NUnit" Version="30.0.1--0009-develop" />
       <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
       <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\CK.DB.User.NamedUser\CK.DB.User.NamedUser.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="%24StObjGen\" />
   </ItemGroup>
 </Project>

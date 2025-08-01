@@ -7,14 +7,7 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <PackageReference Include="CK.IO.User.UserProfile" Version="0.0.0--05iqvun-develop" />
-    </ItemGroup>
-
-    <ItemGroup>
-        <PackageReference Update="Microsoft.VisualStudio.Threading.Analyzers" Version="17.14.15">
-            <PrivateAssets>all</PrivateAssets>
-            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-        </PackageReference>
+        <PackageReference Include="CK.IO.Actor" Version="0.0.0--05iubi7-develop" />
     </ItemGroup>
 
 </Project>

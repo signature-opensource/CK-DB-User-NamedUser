@@ -1,6 +1,7 @@
 using CK.Core;
+using CK.Cris;
+using CK.IO.User.NamedUser;
 using CK.SqlServer;
-using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 
 namespace CK.DB.User.NamedUser;
@@ -11,18 +12,6 @@ namespace CK.DB.User.NamedUser;
 public abstract class NamedUserTable : SqlTable
 {
     void StObjConstruct( Actor.UserTable userTable ) { }
-
-    /// <summary>
-    /// Edits an existing user.
-    /// </summary>
-    /// <param name="context">The call context.</param>
-    /// <param name="actorId">The acting actor identifier.</param>
-    /// <param name="userId">The user identifier.</param>
-    /// <param name="lastName">The last name. Null to skip the update.</param>
-    /// <param name="firstName">The first name. Null to skip the update.</param>
-    /// <returns>The awaitable.</returns>
-    [SqlProcedure( "sNamedUserNamesSet" )]
-    public abstract Task SetNamesAsync( ISqlCallContext context, int actorId, int userId, string? firstName, string? lastName );
 
     /// <summary>
     /// Tries to create a new user. If the user name is not unique, returns -1.
@@ -39,4 +28,24 @@ public abstract class NamedUserTable : SqlTable
                                                string userName,
                                                string lastName,
                                                string firstName );
+
+    //[CommandHandler]
+    //[SqlProcedure( "transform:sUserCreate" )]
+    //public abstract Task<IO.Actor.ICreateUserCommandResult> CreateUserAsync( ISqlCallContext ctx, [ParameterSource] ICreateUserCommand command );
+
+    /// <summary>
+    /// Edits an existing user.
+    /// </summary>
+    /// <param name="context">The call context.</param>
+    /// <param name="actorId">The acting actor identifier.</param>
+    /// <param name="userId">The user identifier.</param>
+    /// <param name="lastName">The last name. Null to skip the update.</param>
+    /// <param name="firstName">The first name. Null to skip the update.</param>
+    /// <returns>The awaitable.</returns>
+    [SqlProcedure( "sNamedUserNamesSet" )]
+    public abstract Task SetNamesAsync( ISqlCallContext context, int actorId, int userId, string? firstName, string? lastName );
+
+    [CommandHandler]
+    [SqlProcedure( "sNamedUserNamesSet" )]
+    public abstract Task<ICrisBasicCommandResult> SetNamesAsync( ISqlCallContext ctx, [ParameterSource] ISetUserNamesCommand command );
 }
