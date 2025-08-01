@@ -17,30 +17,19 @@ namespace CK.DB.User.NamedUser.Tests;
 public class NamedUserCrisTests
 {
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
-    AutomaticServices _automaticServices;
     AsyncServiceScope _scope;
-    CrisBackgroundExecutor _backgroundExecutor;
+    CrisExecutionContext _crisExecutionContext;
     PocoDirectory _pocoDir;
     Package _package;
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider adding the 'required' modifier or declaring as nullable.
 
     [OneTimeSetUp]
-    public async Task OneTimeSetUpAsync()
+    public void OneTimeSetUp()
     {
-        var configuration = TestHelper.CreateDefaultEngineConfiguration();
-        configuration.FirstBinPath.Path = TestHelper.BinFolder;
-        configuration.FirstBinPath.Assemblies.Add( "CK.DB.User.NamedUser" );
-        configuration.FirstBinPath.Types.Add( typeof( CrisBackgroundExecutorService ),
-                                              typeof( CrisBackgroundExecutor ) );
-        configuration.EnsureSqlServerConfigurationAspect();
-
-        var r = await configuration.RunSuccessfullyAsync();
-        _automaticServices = r.CreateAutomaticServices();
-        _scope = _automaticServices.Services.CreateAsyncScope();
+        _scope = SharedEngine.AutomaticServices.CreateAsyncScope();
         var services = _scope.ServiceProvider;
-
         _pocoDir = services.GetRequiredService<PocoDirectory>();
-        _backgroundExecutor = services.GetRequiredService<CrisBackgroundExecutor>();
+        _crisExecutionContext = services.GetRequiredService<CrisExecutionContext>();
         _package = services.GetRequiredService<CK.DB.User.NamedUser.Package>();
     }
 
@@ -48,7 +37,6 @@ public class NamedUserCrisTests
     public async Task OneTimeTearDownAsync()
     {
         await _scope.DisposeAsync();
-        await _automaticServices.DisposeAsync();
     }
 
     [Test]
@@ -60,10 +48,9 @@ public class NamedUserCrisTests
             cmd.ActorId = 1;
             cmd.UserId = userId;
         } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<IO.User.NamedUser.IUserProfile?>();
+        var executedCmd = await _crisExecutionContext.ExecuteRootCommandAsync( cmd );
 
-        var profile = await executingCmd.Result;
+        var profile = executedCmd.WithResult<IO.User.NamedUser.IUserProfile?>().Result;
         profile.ShouldNotBeNull();
         profile.UserId.ShouldBe( userId );
         profile.UserName.ShouldBe( "System" );
@@ -84,9 +71,9 @@ public class NamedUserCrisTests
             c.FirstName = fName;
             c.LastName = lName;
         } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<ICreateUserCommandResult>();
-        var res = await executingCmd.Result;
+        var executedCmd = await _crisExecutionContext.ExecuteRootCommandAsync( cmd );
+
+        var res = executedCmd.WithResult<ICreateUserCommandResult>().Result;
         res.CreatedUserId.ShouldBeGreaterThan( 1 );
         res.UserMessages.ShouldNotBeNull();
 
@@ -96,10 +83,9 @@ public class NamedUserCrisTests
             cmd.UserId = res.CreatedUserId;
         } );
 
-        var executingGetCmd = _backgroundExecutor.Submit( TestHelper.Monitor, getcmd, incomingValidationCheck: false )
-                                                 .WithResult<IO.User.NamedUser.IUserProfile?>();
+        var executedGetCmd = await _crisExecutionContext.ExecuteRootCommandAsync( getcmd );
 
-        var profile = await executingGetCmd.Result;
+        var profile = executedGetCmd.WithResult<IO.User.NamedUser.IUserProfile?>().Result;
         profile.ShouldNotBeNull();
         profile.FirstName.ShouldBe( fName );
         profile.LastName.ShouldBe( lName );
@@ -113,9 +99,9 @@ public class NamedUserCrisTests
             c.ActorId = 1;
             c.UserName = Guid.NewGuid().ToString();
         } );
-        var executingCreateCmd = _backgroundExecutor.Submit( TestHelper.Monitor, createCmd, incomingValidationCheck: false )
-                                                    .WithResult<ICreateUserCommandResult>();
-        var createRes = await executingCreateCmd.Result;
+        var executingCreateCmd = await _crisExecutionContext.ExecuteRootCommandAsync( createCmd );
+
+        var createRes = executingCreateCmd.WithResult<ICreateUserCommandResult>().Result;
 
         var newName = Guid.NewGuid().ToString();
         var fName = Guid.NewGuid().ToString();
@@ -128,9 +114,9 @@ public class NamedUserCrisTests
             c.FirstName = fName;
             c.LastName = lName;
         } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<ICrisBasicCommandResult>();
-        var res = await executingCmd.Result;
+        var executingCmd = await _crisExecutionContext.ExecuteRootCommandAsync( cmd );
+        var res = executingCmd.WithResult<ICrisBasicCommandResult>().Result;
+
         res.UserMessages.ShouldNotBeNull();
 
         var profile = await _package.GetUserProfileAsync( new SqlStandardCallContext(), 1, createRes.CreatedUserId );
@@ -148,17 +134,15 @@ public class NamedUserCrisTests
             c.ActorId = 1;
             c.UserName = Guid.NewGuid().ToString();
         } );
-        var executingCreateCmd = _backgroundExecutor.Submit( TestHelper.Monitor, createCmd, incomingValidationCheck: false )
-                                                    .WithResult<ICreateUserCommandResult>();
-        var createRes = await executingCreateCmd.Result;
+        var executingCreateCmd = await _crisExecutionContext.ExecuteRootCommandAsync( createCmd );
+        var createRes = executingCreateCmd.WithResult<ICreateUserCommandResult>().Result;
         var cmd = _pocoDir.Create<IDestroyUserCommand>( c =>
         {
             c.ActorId = 1;
             c.UserId = createRes.CreatedUserId;
         } );
-        var executingCmd = _backgroundExecutor.Submit( TestHelper.Monitor, cmd, incomingValidationCheck: false )
-                                              .WithResult<ICrisBasicCommandResult>();
-        var res = await executingCmd.Result;
+        var executingCmd = await _crisExecutionContext.ExecuteRootCommandAsync( cmd );
+        var res = executingCmd.WithResult<ICrisBasicCommandResult>().Result;
         res.UserMessages.Where( um => um.Level == UserMessageLevel.Error ).ShouldBeEmpty();
 
         var getcmd = _pocoDir.Create<IGetUserProfileQCommand>( cmd =>
@@ -166,10 +150,9 @@ public class NamedUserCrisTests
             cmd.ActorId = 1;
             cmd.UserId = createRes.CreatedUserId;
         } );
-        var executingGetCmd = _backgroundExecutor.Submit( TestHelper.Monitor, getcmd, incomingValidationCheck: false )
-                                                 .WithResult<IO.User.NamedUser.IUserProfile?>();
+        var executingGetCmd = await _crisExecutionContext.ExecuteRootCommandAsync( getcmd );
 
-        var profile = await executingGetCmd.Result;
+        var profile = executingGetCmd.WithResult<IO.User.NamedUser.IUserProfile?>().Result;
         profile.ShouldBeNull();
     }
 }

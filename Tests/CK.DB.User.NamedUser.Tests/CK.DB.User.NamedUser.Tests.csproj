@@ -12,4 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\CK.DB.User.NamedUser\CK.DB.User.NamedUser.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Folder Include="%24StObjGen\" />
+  </ItemGroup>
 </Project>

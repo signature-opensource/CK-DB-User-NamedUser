@@ -10,9 +10,6 @@ namespace CK.DB.User.NamedUser;
 [SqlObjectItem( "transform:vUser, transform:sUserUserProfileRead" )]
 public abstract class NamedUserTable : SqlTable
 {
-    [AllowNull]
-    UserProfile.Package _userProfilePackage;
-
     void StObjConstruct( Actor.UserTable userTable ) { }
 
     /// <summary>
