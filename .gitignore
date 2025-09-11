@@ -248,3 +248,4 @@ CodeCakeBuilder/UnitTestsDone.*.txt
 $StObjGen/
 CodeCakeBuilder/[Rr]elease/
 CodeCakeBuilder/[Rr]eleases/
+/Tests/CK.DB.User.NamedUser.Tests/DBBackup/
