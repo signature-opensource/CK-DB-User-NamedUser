@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path=".gitignore" />
+    <File Path="appveyor.yml" />
+    <File Path="Common/PackageIcon.png" />
+    <File Path="Directory.Build.props" />
+    <File Path="NuGet.config" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="Tests/CK.DB.User.NamedUser.Tests/CK.DB.User.NamedUser.Tests.csproj" />
+  </Folder>
+  <Project Path="CK.DB.User.NamedUser/CK.DB.User.NamedUser.csproj" />
+  <Project Path="CK.IO.User.NamedUser/CK.IO.User.NamedUser.csproj" />
+</Solution>
